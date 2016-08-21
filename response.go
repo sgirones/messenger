@@ -103,6 +103,34 @@ func (r *Response) Image(im image.Image) error {
 	return nil
 }
 
+// Image sends an image.
+func (r *Response) ImageWithURL(imageUrl string) error {
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	w.WriteField("recipient", fmt.Sprintf(`{"id":"%v"}`, r.to.ID))
+	w.WriteField("message", `{"attachment":{"type":"image", "payload":{"url":"`+imageUrl+`"}}}`)
+
+	req, err := http.NewRequest("POST", SendMessageURL, &b)
+	if err != nil {
+		return err
+	}
+
+	req.URL.RawQuery = "access_token=" + r.token
+
+	req.Header.Set("Content-Type", w.FormDataContentType())
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	var res bytes.Buffer
+	res.ReadFrom(resp.Body)
+	fmt.Println(res.String(), "DONE!")
+	return nil
+}
+
 // ButtonTemplate sends a message with the main contents being button elements
 func (r *Response) ButtonTemplate(text string, buttons *[]StructuredMessageButton) error {
 	m := SendStructuredMessage{
